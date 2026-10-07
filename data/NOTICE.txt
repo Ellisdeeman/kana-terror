@@ -1,0 +1,20 @@
+N5 vocabulary (data/n5-vocab.json)
+  Word ids are the JLPT Vocab Quest N5 indexes, 0 through 717.
+  The list is the N5 deck embedded in that app (fields jp, kana, en; id = index),
+  originally from https://github.com/jamsinclair/open-anki-jlpt-decks
+  (MIT, Copyright (c) 2020 Jamie Sinclair), file src/n5.csv.
+  English glosses derive from JMdict (EDRDG, CC BY-SA 4.0):
+  https://www.edrdg.org/jmdict/j_jmdict.html
+  `rank` is an original gentle commonness order added by Kana Terror
+  (0 = more common). It is not part of the study app's data.
+
+N5 kanji (data/kanji.json)
+  Characters are the N5 set used by JLPT Vocab Quest (data/kanji-n5.json).
+  Readings were simplified for a typing prompt: on-readings and kun stems.
+  The kanji id in an exported result is the character itself.
+
+Audio
+  Sound effects and music are synthesized in the browser for this game.
+  Optional spoken readings use the device Web Speech voice (ja-JP).
+  JLPT Vocab Quest audio clips are not included. That app's word audio is
+  licensed only for JLPT Vocab Quest.

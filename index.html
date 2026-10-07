@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#07080c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Kana Terror — a retro sci-fi survival horror typing game for JLPT N5.">
+  <title>Kana Terror</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./css/game.css">
+</head>
+<body>
+  <div id="app" data-mode="menu">
+    <div id="stage">
+      <canvas id="view" aria-hidden="true"></canvas>
+      <div id="grain"></div>
+      <div id="scan"></div>
+      <div id="vignette"></div>
+      <header id="hud">
+        <div class="hud-top">
+          <div>
+            <div id="sec-code" class="dim">SEC-01</div>
+            <div id="sec-name">DOCKING RING</div>
+          </div>
+          <div class="hud-actions">
+            <button type="button" id="mute" class="ghost" aria-pressed="false">SND</button>
+            <button type="button" id="pause" class="ghost">PAUSE</button>
+          </div>
+        </div>
+        <div class="gauges">
+          <label>HP <span id="hp-num">100</span>
+            <i id="hp-bar"></i>
+          </label>
+          <label>HEAT <span id="heat-num">0</span>
+            <i id="heat-bar"></i>
+          </label>
+        </div>
+        <div class="hud-bot">
+          <span id="score">0</span>
+          <span id="combo">x0</span>
+          <span id="acc">100%</span>
+          <span id="tracker" aria-hidden="true"></span>
+        </div>
+      </header>
+      <div id="plates"></div>
+      <div id="banner" hidden></div>
+    </div>
+    <form id="dock" autocomplete="off" hidden>
+      <div id="flash"></div>
+      <div id="field">
+        <div id="mirror" aria-hidden="true"></div>
+        <input id="type" type="text" enterkeyhint="done" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" aria-label="Type the reading">
+      </div>
+    </form>
+    <section id="menu">
+      <p class="kicker">OUTPOST K-09 · ISOLATION WING</p>
+      <h1>KANA<br>TERROR</h1>
+      <p class="tagline">They crawl out of the vents wearing words. Type the reading before they reach the lamp.</p>
+      <div class="actions">
+        <button type="button" id="start" class="primary">Enter the station</button>
+        <button type="button" id="endless">Endless watch</button>
+        <button type="button" id="study-open" class="ghost">Study link</button>
+      </div>
+      <p class="how">Romaji or a Japanese keyboard. <b>ka</b> becomes か, <b>nn</b> confirms ん, a doubled consonant is っ. The reticle locks whatever matches what you are typing.</p>
+      <p class="meta" id="menu-meta"></p>
+    </section>
+    <section id="study" hidden>
+      <p class="kicker">JLPT VOCAB QUEST</p>
+      <h2>Study link</h2>
+      <p id="study-status" class="how"></p>
+      <div class="actions">
+        <button type="button" id="import-btn">Import study list</button>
+        <button type="button" id="export-btn" class="primary">Export results</button>
+        <button type="button" id="clear-study" class="ghost">Use the full N5 list</button>
+        <button type="button" id="study-close" class="ghost">Back</button>
+      </div>
+      <p class="export-count" id="export-count">0 results since last export</p>
+      <input id="import-file" type="file" accept="application/json,.json" hidden>
+    </section>
+    <section id="card" hidden>
+      <p class="kicker" id="card-kicker"></p>
+      <h2 id="card-title"></h2>
+      <p id="card-body" class="how"></p>
+      <div class="actions" id="card-actions"></div>
+      <p class="export-count" id="card-export"></p>
+    </section>
+  </div>
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
