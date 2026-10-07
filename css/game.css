@@ -341,6 +341,23 @@ h2 { margin: 0 0 8px; letter-spacing: 0.12em; font-size: 28px; }
 
 .actions { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; max-width: 420px; }
 
+.pace {
+  display: flex;
+  gap: 8px;
+  max-width: 420px;
+}
+.pace button {
+  flex: 1;
+  text-align: center;
+  padding: 10px 6px;
+}
+.pace button[aria-pressed="true"] {
+  background: #163018;
+  color: var(--green);
+  border-color: var(--green);
+}
+#pace-note { margin-top: 0; }
+
 button {
   min-height: 48px;
   padding: 12px 14px;

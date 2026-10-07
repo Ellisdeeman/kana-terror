@@ -1,4 +1,5 @@
-import { accuracyOf, createRun, offerInput, retrySector, step, togglePause, tuningOf } from "./game.js";
+import { accuracyOf, createRun, offerInput, retrySector, setRunPace, step, togglePause, tuningOf } from "./game.js";
+import { PACES } from "./pace.js";
 import { drawTitle, drawWorld, layoutEnemy } from "./render.js";
 import { buildCatalog } from "./content.js";
 import { resumeAudio, setMuted, sfxClear, sfxHurt, sfxKill, sfxMiss, sfxShift, tracker } from "./audio.js";
@@ -59,9 +60,27 @@ function refreshMeta() {
       ? `Vocab hosts are drawn from all ${study.known.length} known words.`
       : `Vocab hosts are drawn from all ${study.known.length} known words. ${weakN} weak ${weakN === 1 ? "word is" : "words are"} only a little more likely.`;
   document.querySelector("#study-status").textContent = weakLine;
+  const pace = PACES[save.pace] || PACES.relaxed;
+  document.querySelectorAll("[data-pace]").forEach((btn) => {
+    const on = btn.dataset.pace === pace.id;
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+  const note = document.querySelector("#pace-note");
+  if (note) note.textContent = paceNote(pace.id);
   document.querySelector("#mute").textContent = save.muted ? "MUTE" : "SND";
   document.querySelector("#mute").setAttribute("aria-pressed", save.muted ? "true" : "false");
   setMuted(save.muted);
+}
+
+function paceNote(id) {
+  if (id === "intense") return "Intense is the original pace: faster crawlers, more of them, quicker heat.";
+  if (id === "normal") return "Normal sits between Relaxed and the original pace.";
+  return "Relaxed: crawlers are about 45% slower, two on screen, longer gaps, slower heat. Longer words get more time.";
+}
+
+function choosePace(id) {
+  persistPatch({ pace: id });
+  if (state) setRunPace(state, id);
 }
 
 function setMode(next) {
@@ -174,7 +193,7 @@ function onResult(row) {
 function start(kind) {
   ensureAudio();
   save = loadSave();
-  state = createRun(kind, (Date.now() ^ (Math.random() * 1e9)) >>> 0);
+  state = createRun(kind, (Date.now() ^ (Math.random() * 1e9)) >>> 0, save.pace);
   ctx = {
     catalog,
     cards: save.cards || {},
@@ -242,6 +261,11 @@ function openPause() {
   if (!state || (state.phase !== "play" && state.phase !== "clear" && state.phase !== "pause")) return;
   if (state.phase !== "pause") togglePause(state);
   showCard("HOLD", "Paused", "The vents are still moving.", [
+    ...["relaxed", "normal", "intense"].map((id) => ({
+      label: save.pace === id ? `${PACES[id].label} · on` : PACES[id].label,
+      primary: save.pace === id,
+      on: () => { choosePace(id); openPause(); },
+    })),
     { label: save.speech ? "Speech on" : "Speech off", on: () => { save.speech = !save.speech; persistPatch({ speech: save.speech }); openPause(); } },
     { label: "Resume", primary: true, on: () => { if (state?.phase === "pause") togglePause(state); setMode("play"); typeEl.focus(); } },
     { label: "Export results", on: doExport },
@@ -396,6 +420,9 @@ function bindViewport() {
 }
 
 function bind() {
+  document.querySelectorAll("[data-pace]").forEach((btn) => {
+    btn.addEventListener("click", () => choosePace(btn.dataset.pace));
+  });
   document.querySelector("#start").addEventListener("click", () => start("campaign"));
   document.querySelector("#endless").addEventListener("click", () => start("endless"));
   document.querySelector("#study-open").addEventListener("click", () => { refreshMeta(); setMode("study"); });

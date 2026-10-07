@@ -8,7 +8,9 @@ It is a static site: no server, no account. Progress, the review queue, and an i
 
 ## How to play
 
-**Enter the station** for a run of seven sectors, or **Endless watch** for a rising horde. The first creature is already moving when the sector name fades. Type into the bar at the bottom. Romaji converts as you type (`ka` → か), and a Japanese keyboard's kana is accepted too.
+**Enter the station** for a run of seven sectors, or **Endless watch** for a rising horde. On Relaxed, the first creature steps out as the sector name fades. Type into the bar at the bottom. Romaji converts as you type (`ka` → か), and a Japanese keyboard's kana is accepted too.
+
+**Speed** is Relaxed, Normal, or Intense, on the title screen and in the pause menu. It is saved in this browser. The default is Relaxed. Intense is the original pace. The study-list import and the results export do not include this setting.
 
 The reticle locks the creature whose reading matches what you have typed so far. Finish that reading and it dies. The meaning flashes for a moment — that is the lesson. A wrong key is rejected, the combo breaks, and the station heat jumps. Backspace is free.
 
@@ -27,6 +29,22 @@ What reaches you takes health. Heat climbs on its own, faster when something is 
 **Pause** stops the station. **SND** mutes music and effects. **Speech** (in the pause menu) reads a kill aloud with the device's Japanese voice. Add the site to the home screen; it caches for offline play.
 
 On a phone the playfield sits above the keyboard. The page does not zoom on focus.
+
+### Speed numbers
+
+Approach time is how long a fresh crawler takes to reach the lamp, before the small per-creature wobble. Spawn gap is the average wait before the next one. Heat is how long the meter takes to fill while nothing is close (it fills faster when a creature is near).
+
+| | Relaxed | Normal | Intense |
+| --- | --- | --- | --- |
+| Approach speed | ×0.55 (45% slower) | ×0.78 | ×1, the original |
+| Docking Ring, basic kana | 12.9 s, 2 on screen, 2.61 s gap | 9.1 s, 3 on screen, 2.03 s gap | 7.1 s, 4 on screen, 1.45 s gap |
+| Later sectors | ramp is 45% as steep, cap 3 on screen | ramp is 72% as steep, cap 4 | original ramp, up to 5 |
+| Heat, nothing close | 121 s to full | 85 s | 67 s |
+| Heat tick after it is full | every 1.55 s | every 1.09 s | every 0.85 s |
+| Extra time per kana after the first, on vocab, kanji, and mimics | +1.7 s | +1.1 s | +0.55 s |
+| Boss, time before a 2-kana word shifts | 14 s | 11 s | 7.8 s |
+
+A 4-kana word in the Specimen Ward therefore takes about 19.6 s on Relaxed and 9.7 s on Intense. A 6-kana boss word keeps its shape for 20.8 s on Relaxed and 10 s on Intense. Endless starts at 2 creatures and a 14.5 s approach on Relaxed; Intense still starts at 3 creatures and a 8.0 s approach and can climb to 6.
 
 ## Romaji
 

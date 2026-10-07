@@ -9,6 +9,17 @@ import {
   vocabPool,
 } from "./srs.js";
 import { foldLong, liveConvert, pendingFits, sameReading } from "./romaji.js";
+import {
+  DEFAULT_PACE,
+  HEAT_CLOSE_PER_S,
+  HEAT_IDLE_PER_S,
+  HEAT_TICK_MS,
+  normalizePace,
+  paceById,
+  readingSlowdown,
+  scaleTuning,
+  shiftWindow,
+} from "./pace.js";
 
 export function mulberry32(seed) {
   let a = seed >>> 0;
@@ -21,9 +32,10 @@ export function mulberry32(seed) {
   };
 }
 
-export function createRun(mode = "campaign", seed = 1) {
+export function createRun(mode = "campaign", seed = 1, pace = DEFAULT_PACE) {
   const state = {
     mode,
+    pace: normalizePace(pace),
     rng: mulberry32(seed || 1),
     phase: "play",
     sector: 0,
@@ -43,7 +55,7 @@ export function createRun(mode = "campaign", seed = 1) {
     pending: "",
     lock: null,
     toast: null,
-    spawnIn: 220,
+    spawnIn: paceById(pace).openDelay,
     elapsed: 0,
     shake: 0,
     hurtFlash: 0,
@@ -60,8 +72,22 @@ export function createRun(mode = "campaign", seed = 1) {
 }
 
 export function tuningOf(state) {
-  if (state.mode === "endless") return endlessTuning(state.endlessKills);
-  return sectorByIndex(state.sector);
+  const pace = state.pace || DEFAULT_PACE;
+  if (state.mode === "endless") {
+    const scaled = state.endlessKills * paceById(pace).ramp;
+    return scaleTuning(endlessTuning(scaled), pace);
+  }
+  return scaleTuning(sectorByIndex(state.sector), pace, SECTORS[0]);
+}
+
+export function setRunPace(state, pace) {
+  const next = normalizePace(pace);
+  const ratio = paceById(next).speed / paceById(state.pace || DEFAULT_PACE).speed;
+  state.pace = next;
+  if (ratio !== 1) {
+    for (const enemy of state.enemies) enemy.speed *= ratio;
+  }
+  return state;
 }
 
 function announceSector(state) {
@@ -329,7 +355,9 @@ export function spawnEnemy(state, ctx, tuning = tuningOf(state)) {
   const item = pickItem(state, ctx, kind, variant === "runner");
   if (!item) return null;
   if (variant === "armored" && item.type === "vocab" && !item.kanji) variant = "host";
-  const speed = tuning.speed * (variant === "runner" ? 1.72 : variant === "armored" ? 0.86 : 1) * (0.92 + state.rng() * 0.16);
+  let speed = tuning.speed * (variant === "runner" ? 1.72 : variant === "armored" ? 0.86 : 1) * (0.92 + state.rng() * 0.16);
+  const longForm = variant === "mimic" || item.type === "vocab" || item.type === "kanji";
+  speed = readingSlowdown(speed, item.len, state.pace, longForm);
   const enemy = makeEnemy(state, item, variant, speed);
   state.enemies.push(enemy);
   state.events.push({ type: "spawn", enemy });
@@ -359,12 +387,16 @@ function applyBossWord(state, enemy, item) {
   enemy.script = "hira";
 }
 
+function bossWordSpeed(state, len) {
+  return readingSlowdown(tuningOf(state).speed, len, state.pace, true);
+}
+
 export function spawnBoss(state, ctx) {
   const item = bossWordItem(state, ctx);
-  const enemy = makeEnemy(state, item, "boss", tuningOf(state).speed);
+  const enemy = makeEnemy(state, item, "boss", bossWordSpeed(state, item.len));
   enemy.boss = true;
   enemy.shiftsLeft = 3;
-  enemy.shiftIn = 7800;
+  enemy.shiftIn = shiftWindow(item.len, state.pace);
   enemy.lane = 1;
   enemy.progress = 0.08;
   enemy.damage = 32;
@@ -391,7 +423,8 @@ function morphBoss(state, ctx, enemy, failed) {
     enemy.shiftsLeft -= 1;
     const item = bossWordItem(state, ctx);
     if (item) applyBossWord(state, enemy, item);
-    enemy.shiftIn = 7800;
+    enemy.speed = bossWordSpeed(state, enemy.len);
+    enemy.shiftIn = shiftWindow(enemy.len, state.pace);
     state.events.push({ type: "shift", enemy });
     return;
   }
@@ -409,7 +442,7 @@ function morphBoss(state, ctx, enemy, failed) {
   enemy.toastJp = BOSS_PHRASE.display;
   enemy.prompt = "phrase";
   enemy.wordBorn = state.elapsed;
-  enemy.speed *= 0.82;
+  enemy.speed = tuningOf(state).speed * 0.82;
   state.events.push({ type: "phrase", enemy });
 }
 
@@ -476,7 +509,7 @@ function advance(state) {
     return;
   }
   state.kills = 0;
-  state.spawnIn = 360;
+  state.spawnIn = paceById(state.pace).openDelay;
   state.phase = "play";
   state.enemies = [];
   announceSector(state);
@@ -545,13 +578,14 @@ export function step(state, ctx, dt) {
   if (state.phase !== "play") return state;
 
   const tuning = tuningOf(state);
-  let drain = 1.5;
+  const heat = paceById(state.pace).heat;
+  let drain = HEAT_IDLE_PER_S * heat;
   const nearest = state.enemies.reduce((m, e) => Math.max(m, e.progress), 0);
-  if (nearest > 0.5) drain += (nearest - 0.5) * 9;
+  if (nearest > 0.5) drain += (nearest - 0.5) * HEAT_CLOSE_PER_S * heat;
   state.coolant = Math.max(0, state.coolant - (drain * dt) / 1000);
   if (state.coolant <= 0) {
     state.heatAcc += dt;
-    if (state.heatAcc >= 850) {
+    if (state.heatAcc >= HEAT_TICK_MS / heat) {
       state.heatAcc = 0;
       damage(state, 7);
       if (state.phase !== "play") return state;
@@ -610,7 +644,7 @@ export function retrySector(state) {
   state.kills = 0;
   state.combo = 0;
   state.heatAcc = 0;
-  state.spawnIn = 280;
+  state.spawnIn = paceById(state.pace).openDelay;
   state.toast = null;
   clearBuffer(state);
   announceSector(state);

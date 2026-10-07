@@ -257,5 +257,6 @@ export function emptySave() {
     clears: 0,
     endlessBest: 0,
     runs: 0,
+    pace: "relaxed",
   };
 }

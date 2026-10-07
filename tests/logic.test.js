@@ -8,7 +8,15 @@ import {
   fitsEnemy,
   offerInput,
   step,
+  tuningOf,
 } from "../js/game.js";
+import {
+  approachSeconds,
+  HEAT_IDLE_PER_S,
+  readingSlowdown,
+  shiftWindow,
+} from "../js/pace.js";
+import { loadSave, writeSave } from "../js/storage.js";
 import {
   expandReading,
   foldLong,
@@ -23,6 +31,7 @@ import {
   buildResultsExport,
   commonWeight,
   emptyCard,
+  emptySave,
   gradeFromAnswer,
   parseStudyList,
   pickWeighted,
@@ -259,6 +268,91 @@ test("a typed campaign can clear every sector and the boss", () => {
   assert.equal(BOSS_PHRASE.parts.length, 4);
   assert.ok(state.runResults.some((r) => r.type === "vocab" && r.id === 713 && r.correct));
   assert.ok(accuracyOf(state) > 0.9);
+});
+
+test("relaxed is the default pace and intense keeps the original numbers", () => {
+  const relaxed = createRun("campaign", 1);
+  assert.equal(relaxed.pace, "relaxed");
+  assert.equal(relaxed.spawnIn, 2000);
+  const dockR = tuningOf(relaxed);
+  assert.equal(dockR.max, 2);
+  assert.equal(dockR.speed, 0.135 * 0.55);
+  assert.equal(dockR.spawn, 1450 * 1.8);
+  assert.ok(Math.abs(approachSeconds(dockR.speed) - 0.96 / (0.135 * 0.55)) < 1e-9);
+
+  const intense = createRun("campaign", 1, "intense");
+  assert.equal(intense.spawnIn, 220);
+  const dockI = tuningOf(intense);
+  assert.equal(dockI.speed, 0.135);
+  assert.equal(dockI.spawn, 1450);
+  assert.equal(dockI.max, 4);
+  intense.sector = 1;
+  assert.equal(tuningOf(intense).speed, 0.15);
+  assert.equal(tuningOf(intense).max, 4);
+  intense.sector = 5;
+  assert.equal(tuningOf(intense).max, 5);
+
+  relaxed.sector = 1;
+  const ventsSlow = 1 - tuningOf(relaxed).speed / 0.15;
+  assert.ok(ventsSlow >= 0.4 && ventsSlow <= 0.5, String(ventsSlow));
+  relaxed.sector = 5;
+  assert.equal(tuningOf(relaxed).max, 3);
+  relaxed.sector = 6;
+  assert.equal(tuningOf(relaxed).max, 1);
+  assert.equal(tuningOf(relaxed).speed, 0.052 * 0.55);
+
+  const wardSpeed = 0.12 * 0.55;
+  const short = readingSlowdown(wardSpeed, 1, "relaxed", true);
+  const four = readingSlowdown(wardSpeed, 4, "relaxed", true);
+  assert.equal(short, wardSpeed);
+  assert.ok(Math.abs(approachSeconds(four) - (approachSeconds(short) + 3 * 1.7)) < 1e-9);
+  const fourIntense = readingSlowdown(0.12, 4, "intense", true);
+  assert.ok(Math.abs(approachSeconds(fourIntense) - (0.96 / 0.12 + 3 * 0.55)) < 1e-9);
+  assert.equal(shiftWindow(2, "intense"), 7800);
+  assert.equal(shiftWindow(6, "relaxed"), 14000 + 4 * 1700);
+
+  const endless = createRun("endless", 1, "intense");
+  assert.equal(tuningOf(endless).speed, 0.12);
+  assert.equal(tuningOf(endless).spawn, 1500);
+  assert.equal(tuningOf(endless).max, 3);
+  endless.endlessKills = 40;
+  assert.equal(tuningOf(endless).speed, 0.24);
+  assert.equal(tuningOf(endless).max, 6);
+  const easy = createRun("endless", 1, "relaxed");
+  assert.equal(tuningOf(easy).max, 2);
+  assert.equal(tuningOf(easy).speed, 0.12 * 0.55);
+  assert.equal(tuningOf(easy).spawn, 1500 * 1.8);
+});
+
+test("relaxed heat builds at 55% of the original rate", () => {
+  function dropped(pace) {
+    const state = createRun("campaign", 1, pace);
+    state.spawnIn = 1e9;
+    const gameCtx = { catalog, cards: {}, study: null, now: () => 0, onResult() {} };
+    for (let i = 0; i < 100; i++) step(state, gameCtx, 48);
+    return 100 - state.coolant;
+  }
+  const slow = dropped("relaxed");
+  const fast = dropped("intense");
+  assert.ok(Math.abs(fast - HEAT_IDLE_PER_S * 4.8) < 1e-6);
+  assert.ok(Math.abs(slow - fast * 0.55) < 1e-6);
+});
+
+test("pace is saved locally and stays out of the results file", () => {
+  const mem = {
+    data: new Map(),
+    getItem(k) { return this.data.has(k) ? this.data.get(k) : null; },
+    setItem(k, v) { this.data.set(k, String(v)); },
+  };
+  writeSave({ ...emptySave(), pace: "intense" }, mem);
+  assert.equal(loadSave(mem).pace, "intense");
+  writeSave({ ...emptySave(), pace: "turbo" }, mem);
+  assert.equal(loadSave(mem).pace, "relaxed");
+  const queued = { ...emptySave(), pace: "intense", results: [{ id: "あ", type: "kana", correct: true, ms: 400 }] };
+  const plan = prepareExport(queued, new Date("2026-10-08T00:00:00.000Z"));
+  assert.equal(plan.payload.source, EXPORT_SOURCE);
+  assert.equal(Object.hasOwn(plan.payload, "pace"), false);
+  assert.deepEqual(Object.keys(plan.payload), ["source", "date", "results"]);
 });
 
 test("kanji ids are the characters", () => {

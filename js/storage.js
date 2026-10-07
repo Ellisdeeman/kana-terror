@@ -1,3 +1,4 @@
+import { normalizePace } from "./pace.js";
 import { emptySave, normalizeResults } from "./srs.js";
 
 export const SAVE_KEY = "kana-terror.v1";
@@ -14,6 +15,7 @@ export function loadSave(storage = localStorage) {
       results: Array.isArray(data.results) ? data.results : [],
       cards: data.cards && typeof data.cards === "object" ? data.cards : {},
       study: data.study && Array.isArray(data.study.known) ? data.study : null,
+      pace: normalizePace(data.pace),
     };
   } catch {
     return emptySave();

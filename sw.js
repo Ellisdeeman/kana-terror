@@ -1,4 +1,4 @@
-const CACHE = "kana-terror-v2";
+const CACHE = "kana-terror-v3";
 const ASSETS = [
   "./",
   "./index.html",
@@ -11,6 +11,7 @@ const ASSETS = [
   "./js/render.js",
   "./js/audio.js",
   "./js/storage.js",
+  "./js/pace.js",
   "./data/n5-vocab.json",
   "./data/kanji.json",
   "./data/NOTICE.txt",
