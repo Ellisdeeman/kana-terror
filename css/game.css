@@ -191,11 +191,11 @@ button, input { font: inherit; color: inherit; }
 
 .plate .word {
   display: inline-block;
-  background: rgba(0, 0, 0, 0.62);
+  background: rgba(0, 0, 0, 0.78);
   border: 1px solid var(--line);
-  padding: 3px 8px 4px;
+  padding: 4px 10px 5px;
   font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif;
-  font-size: clamp(18px, 4.4vw, 28px);
+  font-size: clamp(22px, 5vw, 34px);
   font-weight: 700;
   line-height: 1.25;
   text-shadow: 0 0 8px rgba(182, 255, 138, 0.35);
@@ -263,7 +263,13 @@ button, input { font: inherit; color: inherit; }
 #flash b { color: #fff; font-weight: 700; }
 #flash i { color: var(--dim); font-style: normal; }
 
-#field { position: relative; height: 42px; }
+#field {
+  position: relative;
+  height: 52px;
+  border: 1px solid rgba(182, 255, 138, 0.55);
+  background: #101610;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.6), 0 0 16px rgba(182, 255, 138, 0.08);
+}
 
 #mirror, #type {
   position: absolute;
@@ -271,9 +277,17 @@ button, input { font: inherit; color: inherit; }
   font-size: 22px;
   font-family: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
   letter-spacing: 0.04em;
+  padding: 0 12px;
 }
 
-#mirror { color: var(--green); pointer-events: none; line-height: 42px; }
+#mirror { color: var(--green); pointer-events: none; line-height: 52px; }
+#mirror:empty::before {
+  content: "type the reading";
+  color: #5d7a66;
+  font-family: "Courier New", ui-monospace, monospace;
+  font-size: 16px;
+  letter-spacing: 0.12em;
+}
 #type {
   background: transparent;
   border: 0;
@@ -281,8 +295,7 @@ button, input { font: inherit; color: inherit; }
   caret-color: var(--green);
   color: transparent;
   width: 100%;
-  line-height: 42px;
-  padding: 0;
+  line-height: 52px;
   border-radius: 0;
 }
 

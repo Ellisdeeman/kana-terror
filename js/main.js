@@ -52,9 +52,13 @@ function refreshMeta() {
   const study = save.study;
   const pool = study ? `${study.known.length} known · ${study.weak.length} weak` : "full N5 list, common words a little more often";
   document.querySelector("#menu-meta").textContent = `Best ${save.best || 0} · clears ${save.clears || 0} · endless ${save.endlessBest || 0} · ${pool}`;
-  document.querySelector("#study-status").textContent = study
-    ? `Vocab hosts are drawn from all ${study.known.length} known words. The ${study.weak.length} weak ones are only a little more likely.`
-    : "No study list yet. Vocab hosts use the full N5 list, tilted gently toward common words.";
+  const weakN = study ? study.weak.length : 0;
+  const weakLine = !study
+    ? "No study list yet. Vocab hosts use the full N5 list, tilted gently toward common words."
+    : weakN === 0
+      ? `Vocab hosts are drawn from all ${study.known.length} known words.`
+      : `Vocab hosts are drawn from all ${study.known.length} known words. ${weakN} weak ${weakN === 1 ? "word is" : "words are"} only a little more likely.`;
+  document.querySelector("#study-status").textContent = weakLine;
   document.querySelector("#mute").textContent = save.muted ? "MUTE" : "SND";
   document.querySelector("#mute").setAttribute("aria-pressed", save.muted ? "true" : "false");
   setMuted(save.muted);
@@ -437,6 +441,19 @@ function bind() {
         setMode("play");
         typeEl.focus();
       }
+      return;
+    }
+    if (mode !== "play" || !state) return;
+    if (e.target === typeEl || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === "Backspace") {
+      typeEl.value = [...typeEl.value].slice(0, -1).join("");
+      onType();
+      e.preventDefault();
+    } else if (e.key.length === 1) {
+      typeEl.value += e.key;
+      onType();
+      e.preventDefault();
+      typeEl.focus();
     }
   });
   document.addEventListener("visibilitychange", () => {
